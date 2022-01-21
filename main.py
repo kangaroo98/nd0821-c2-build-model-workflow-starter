@@ -1,3 +1,17 @@
+'''
+Main module containing all MLOps steps to generate a ML model,
+which will determine the best price prediction for properties:
+- download
+- basic cleaning
+- data check
+- data split
+- train random forest
+- test regression
+
+Author: Oliver
+Date: 2022, Jan
+
+'''
 import json
 
 import mlflow
@@ -6,18 +20,6 @@ import os
 import wandb
 import hydra
 from omegaconf import DictConfig
-
-_steps = [
-    "download",
-    "basic_cleaning",
-    "data_check",
-    "data_split",
-    "train_random_forest",
-    # NOTE: We do not include this in the steps so it is not run by mistake.
-    # You first need to promote a model export to "prod" before you can run this,
-    # then you need to run this step explicitly
-#    "test_regression_model"
-]
 
 
 # This automatically reads in the configuration
@@ -29,8 +31,9 @@ def go(config: DictConfig):
     os.environ["WANDB_RUN_GROUP"] = config["main"]["experiment_name"]
 
     # Steps to execute
-    steps_par = config['main']['steps']
-    active_steps = steps_par.split(",") if steps_par != "all" else _steps
+    # the steps defined in the config file can be overridden by passing the steps 
+    # when calling the module (e.g. python main.py main.steps=download) 
+    active_steps = config['main']['steps']
 
     # Move to a temporary directory
     with tempfile.TemporaryDirectory() as tmp_dir:

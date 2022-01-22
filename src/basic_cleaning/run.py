@@ -1,7 +1,11 @@
 #!/usr/bin/env python
-"""
+'''
 Download from W&B the raw dataset and apply some basic data cleaning, exporting the result to a new artifact
-"""
+
+Author: Oliver
+Date: 2022, Jan
+
+'''
 import argparse
 import logging
 import pandas as pd

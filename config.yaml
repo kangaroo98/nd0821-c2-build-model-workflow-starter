@@ -14,6 +14,9 @@ main:
     # You first need to promote a model export to "prod" before you can run this,
     # then you need to run this step explicitly
     # - test_regression_model
+artifacts:
+  raw_data_artifact_name: sample.csv
+  cleaned_data_artifact_name: cleaned_data.csv
 etl:
   sample: "sample1.csv"
   min_price: 10 # dollars

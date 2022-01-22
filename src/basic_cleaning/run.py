@@ -26,11 +26,11 @@ def go(args):
     artifact_path = artifact.file()
 
     df = pd.read_csv(artifact_path)
+    logger.info(f"Read columns: {df.columns.values}")
 
     # Drop outliers
     logger.info("Dropping the outliers with a defined price range")
-    idx = df['price'].between(args.min_price, args.max_price)
-    df = df[idx].copy()
+    df = df[df['price'].between(args.min_price, args.max_price)]
 
     # Convert last_review to datetime
     logger.info("Converting column last_review to date format")
@@ -45,7 +45,8 @@ def go(args):
 
     # upload cleand data as an artifact to WB
     logger.info("Storing cleaned data")
-    df.to_csv(args.output_artifact)
+    df.to_csv(args.output_artifact, index=False)
+    logger.info(f"Stored Columns: {df.columns.values}")
 
     artifact = wandb.Artifact(
         name=args.output_artifact,

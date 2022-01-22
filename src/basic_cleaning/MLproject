@@ -5,28 +5,28 @@ entry_points:
   main:
     parameters:
       input_artifact:
-        description: # raw data artifact name, latest version
-        type: str
+        description: raw data artifact name, latest version
+        type: string
 
       output_artifact:
-        description: # cleaned data artifact name
-        type: str
+        description: cleaned data artifact name
+        type: string
 
       output_type:
-        description: # define artifact type
-        type: str
+        description: define artifact type
+        type: string
         default: cleaned_data
 
       output_description:
-        description: ## ADD DESCRIPTION
-        type: str
+        description: description of the artifact
+        type: string
 
       min_price:
-        description: ## ADD DESCRIPTION
+        description: range definition for preprocessing the price
         type: float
 
       max_price:
-        description: ## ADD DESCRIPTION
+        description: # range definition for preprocessing the price
         type: float
 
     command: >-

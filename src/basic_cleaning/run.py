@@ -36,6 +36,10 @@ def go(args):
     logger.info("Converting column format")
     df['last_review'] = pd.to_datetime(df['last_review'])
 
+    # Assuming that in production all names and hostnames are filled properly set it to an empty string
+    df['name'].fillna("", inplace=True)
+    df['host_name'].fillna("", inplace=True)
+
     logger.info("Storing cleaned data")
     df.to_csv(args.output_artifact)
 

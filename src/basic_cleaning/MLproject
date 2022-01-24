@@ -26,7 +26,7 @@ entry_points:
         type: float
 
       max_price:
-        description: # range definition for preprocessing the price
+        description: range definition for preprocessing the price
         type: float
 
     command: >-

@@ -1,12 +1,16 @@
 '''
 Main module containing all MLOps steps to generate a ML model,
 which will determine the best price prediction for properties:
-- download
-- basic cleaning
-- data check
-- data split
-- train random forest
-- test regression
+- download -> components/get_data 
+- basic_cleaning -> src/basic_cleaning
+- data_check -> src/data_check
+- data_split -> components/train_val_split
+- train_random_forest -> src/train_random_forest
+- test_regression_model -> components/test_regression 
+!!!ATTENTION!!! Updated test_regression_model in my git repo to reflect the inference signature
+NOTE: test regression is not included in the config.yaml in order not
+to run it by mistake. You first need to promote a model export to "prod"
+before you can run it, then you need to run this step explicitly.
 
 Author: Oliver
 Date: 2022, Jan
@@ -34,10 +38,10 @@ def go(config: DictConfig):
     - data_check
     - data_split
     - train_random_forest
-    NOTE: test_regression_model is not included in the config.yaml in order not
+
+    NOTE: test_regression_model is not included in order not
     to run it by mistake. You first need to promote a model export to "prod"
     before you can run it, then you need to run this step explicitly.
-    - test_regression_model
 
     '''
     # Setup the wandb experiment. All runs will be grouped under this name
@@ -46,7 +50,7 @@ def go(config: DictConfig):
 
     # Steps to execute
     # the steps defined in the config file can be overridden by passing the steps
-    # as parameter (e.g. python main.py main.steps=download,basic_cleaning)
+    # as parameter (e.g. mlflow run . -P steps=download,basic_cleaning)
     active_steps = config['main']['steps']
     logger.info(f"Active steps in this ML pipeline: {active_steps}")
 
@@ -132,7 +136,7 @@ def go(config: DictConfig):
 
         if "test_regression_model" in active_steps:
 
-            # regression test
+            # regression test !!!ATTENTION!!! Update in my git repo to reflect inference signature 
             _ = mlflow.run(
                 os.path.join(hydra.utils.get_original_cwd(), "components", "test_regression_model"),
                 #f"{config['main']['components_repository']}/test_regression_model",

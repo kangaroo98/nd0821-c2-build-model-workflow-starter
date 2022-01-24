@@ -7,7 +7,7 @@ entry_points:
       steps:
         description: Comma-separated list of steps to execute (useful for debugging)
         type: str
-        default: all
+        default: download,basic_cleaning,data_check,data_split,train_random_forest
 
       hydra_options:
         description: Other configuration parameters to override

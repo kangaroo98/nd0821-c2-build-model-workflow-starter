@@ -1,7 +1,7 @@
 # Comments:
-Please find below the link to my GitHub repo:
+Please find here my GitHub repo:
 https://github.com/kangaroo98/nd0821-c2-build-model-workflow-starter.git
-and to my Weights&Biases workspace:
+and my Weights&Biases workspace:
 https://wandb.ai/kangaroo98/nyc_airbnb?workspace=user-kangaroo98
 
 Please be aware that I have moved the "_steps"-list from main.py into the config.yaml. 

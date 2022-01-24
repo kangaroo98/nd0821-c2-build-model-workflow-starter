@@ -21,7 +21,7 @@ artifacts:
   test_data_artifact_name: test_data.csv
   model_artifact_name: random_forest_export
 etl:
-  sample: "sample2.csv"
+  sample: "sample1.csv"
   min_price: 10 # dollars
   max_price: 350 # dollars
 data_check:

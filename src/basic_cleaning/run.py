@@ -47,6 +47,10 @@ def go(args):
     logger.info(
         f"Removed missing values for columns name and host_name (NaN={df['name'].isnull().values.any()})")
 
+    # drop outliers of longitude and latitude
+    idx = df['longitude'].between(-74.25, -73.50) & df['latitude'].between(40.5, 41.2)
+    df = df[idx].copy()
+    
     # upload cleand data as an artifact to WB
     logger.info("Storing cleaned data")
     df.to_csv(args.output_artifact, index=False)

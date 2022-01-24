@@ -47,16 +47,16 @@ def go(args):
     run = wandb.init(job_type="train_random_forest")
     run.config.update(args)
 
-    logger.info("Retrieve the random forest configuration")
     # Get the Random Forest configuration and update W&B
     with open(args.rf_config) as fp:
         rf_config = json.load(fp)
     run.config.update(rf_config)
+    logger.info(f"Retrieved the random forest configuration: {rf_config}")
 
     # Fix the random seed for the Random Forest, so we get reproducible results - ??? -> tbd
     rf_config['random_state'] = args.random_seed
 
-    logger.info("Retrieve the trainval data set and split in train and validation data")
+    logger.info("Retrieving the trainval data set and splitting it in train and validation data")
     trainval_local_path = run.use_artifact(args.trainval_artifact).file()
     X = pd.read_csv(trainval_local_path)
     y = X.pop("price")  # this removes the column "price" from X and puts it into y
@@ -64,25 +64,25 @@ def go(args):
         X, y, test_size=args.val_size, stratify=X[args.stratify_by], random_state=args.random_seed
     )
 
-    logger.info("Preparing sklearn pipeline")
+    # Generating the inference pipeline
     sk_pipe, processed_features = get_inference_pipeline(rf_config, args.max_tfidf_features)
+    logger.info(f"Prepared sklearn inference pipeline, processed features: {processed_features}")
 
-    logger.info("Train the model")
-    # fit the model using X_train, y_train data
+    logger.info("Train the model...")
     sk_pipe.fit(X_train[processed_features], y_train)
 
     # Model performance -> compute r2 and MAE
     logger.info("Scoring")
-    r_squared = sk_pipe.score(X_val, y_val)
-    y_pred = sk_pipe.predict(X_val)
+    r_squared = sk_pipe.score(X_val[processed_features], y_val)
+    y_pred = sk_pipe.predict(X_val[processed_features])
     mae = mean_absolute_error(y_val, y_pred)
-    logger.info(f"Score: {r_squared}")
+    logger.info(f"R-Squared: {r_squared}")
     logger.info(f"MAE: {mae}")
 
     # Save model package in the MLFlow sklearn format
-    logger.info("Exporting the model & summarize run")
+    logger.info(f"Exporting the model & summarize run (artifact name: {args.output_artifact})")
     if args.output_artifact != "null":
-        export_model(run, sk_pipe, processed_features, X_val, y_pred, args.output_artifact)
+        export_model(run, sk_pipe, X_val[processed_features], y_pred, rf_config, args.output_artifact)
 
     # Results: 
     # Plot feature importance
@@ -97,9 +97,9 @@ def go(args):
           "feature_importance": wandb.Image(fig_feat_imp),
         }
     )
+    logger.info("Artifact is successfully logged.")
 
-def export_model(run, sk_pipe, processed_features, X_val, val_pred, model_export_name):
-    
+def export_model(run, sk_pipe, X_val_processed, val_pred, rf_config, model_export_name):
     ######################################
     # Save the sk_pipe pipeline as a mlflow.sklearn model in the directory "random_forest_dir"
     # HINT: use mlflow.sklearn.save_model
@@ -120,7 +120,7 @@ def export_model(run, sk_pipe, processed_features, X_val, val_pred, model_export
         shutil.rmtree("random_forest_dir")
 
     # Get the columns that we are really using from the pipeline
-    signature = infer_signature(X_val[processed_features], val_pred)
+    signature = infer_signature(X_val_processed, val_pred)
 
     with tempfile.TemporaryDirectory() as temp_dir:
 
@@ -131,17 +131,16 @@ def export_model(run, sk_pipe, processed_features, X_val, val_pred, model_export
             export_path,
             serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_CLOUDPICKLE,
             signature=signature,
-            input_example=X_val.iloc[:2],
+            input_example=X_val_processed.iloc[:2],
         )
 
         artifact = wandb.Artifact(
             model_export_name,
             type="model_export",
             description="Random Forest model export",
+            metadata=rf_config
         )
         artifact.add_dir(export_path)
-
-        # add rfconfig metadata - tbd
 
         run.log_artifact(artifact)
 
@@ -181,7 +180,7 @@ def get_inference_pipeline(rf_config, max_tfidf_features):
     # 1 - A SimpleImputer(strategy="most_frequent") to impute missing values
     # 2 - A OneHotEncoder() step to encode the variable
     non_ordinal_categorical_preproc = make_pipeline(
-        SimpleImputer(strategy="most_frequent", fill_value=0), OneHotEncoder()
+        SimpleImputer(strategy="most_frequent"), OneHotEncoder()
     )
     ######################################
 

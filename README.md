@@ -6,7 +6,7 @@ Please be aware that I have moved the "_steps"-list from main.py into the config
 If you want to run all steps just "mlflow run ." respectively use the steps parameter as 
 usual: "mlflow run . -P steps=...". 
 
-In addition I have experienced an issue in the test_regresion_model component. From my point of 
+In addition I have experienced an issue in the test_regression_model component (run.py). From my point of 
 view it is a bug since the signature of the model should be applied on the test data. Otherwise 
 this will result in an error as long as not the complete features are used to train the model.  
 This is fixed in my git repo version and therefore I didn't directly use this component.

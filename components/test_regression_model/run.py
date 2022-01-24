@@ -37,13 +37,12 @@ def go(args):
     logger.info("Loading model and performing inference on test set")
     logger.info(f"Features: {X_test.columns.values}")
     sk_pipe = mlflow.sklearn.load_model(model_local_path)
+    # reflect the features used in training the model -> inference pipeline
     used_columns = list(itertools.chain.from_iterable([x[2] for x in sk_pipe['preprocessor'].transformers]))
     logger.info(f"Features loaded: {used_columns}")
-    logger.info(f"sk_pipe['preprocessor'].transformers: {sk_pipe['preprocessor'].transformers}")
     
-    y_pred = sk_pipe.predict(X_test[used_columns])
-
     logger.info("Scoring")
+    y_pred = sk_pipe.predict(X_test[used_columns])
     r_squared = sk_pipe.score(X_test[used_columns], y_test)
     mae = mean_absolute_error(y_test, y_pred)
 

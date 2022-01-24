@@ -2,8 +2,6 @@ main:
   components_repository: "https://github.com/udacity/nd0821-c2-build-model-workflow-starter.git#components"
   # All the intermediate files will be copied to this directory at the end of the run.
   # Set this to null if you are running in prod
-  project_name: nyc_airbnb
-  experiment_name: development
   steps:
     - download
     - basic_cleaning
@@ -14,7 +12,8 @@ main:
     # You first need to promote a model export to "prod" before you can run this,
     # then you need to run this step explicitly
     # - test_regression_model
-artifacts:
+  project_name: nyc_airbnb
+  experiment_name: development
   raw_data_artifact_name: sample.csv
   cleaned_data_artifact_name: cleaned_data.csv
   trainval_data_artifact_name: trainval_data.csv

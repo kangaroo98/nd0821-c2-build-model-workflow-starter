@@ -11,7 +11,9 @@ import scipy.stats
 
 
 def test_column_names(data):
-
+    '''
+    check column names
+    '''
     expected_colums = [
         "id",
         "name",
@@ -41,7 +43,9 @@ def test_column_names(data):
 
 
 def test_neighborhood_names(data):
-
+    '''
+    confirm neigbourhood names are known
+    '''
     known_names = ["Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"]
 
     neigh = set(data['neighbourhood_group'].unique())

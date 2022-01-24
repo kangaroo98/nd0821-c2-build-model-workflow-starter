@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 '''
-Download from W&B the raw dataset and apply some basic data cleaning, exporting the result to a new artifact
+Download from W&B the raw dataset and apply some basic data cleaning,
+exporting the result to a new artifact
 
 Author: Oliver
 Date: 2022, Jan
 
 '''
+import os
 import argparse
 import logging
 import pandas as pd
 import wandb
-import os
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
@@ -18,7 +19,9 @@ logger = logging.getLogger()
 
 
 def go(args):
-
+    '''
+    preprocessing the data
+    '''
     run = wandb.init(job_type="basic_cleaning")
     run.config.update(args)
 
@@ -29,32 +32,34 @@ def go(args):
     artifact = run.use_artifact(args.input_artifact)
     artifact_path = artifact.file()
 
-    df = pd.read_csv(artifact_path)
-    logger.info(f"Read columns: {df.columns.values}")
+    df_toclean = pd.read_csv(artifact_path)
+    logger.info(f"Read columns: {df_toclean.columns.values}")
 
     # Drop outliers
     logger.info("Dropping the outliers with a defined price range")
-    df = df[df['price'].between(args.min_price, args.max_price)]
+    idx = df_toclean['price'].between(args.min_price, args.max_price) # pylint: disable=unsubscriptable-object
+    df_toclean = df_toclean[idx].copy() # pylint: disable=unsubscriptable-object
 
     # Convert last_review to datetime
     logger.info("Converting column last_review to date format")
-    df['last_review'] = pd.to_datetime(df['last_review'])
+    df_toclean['last_review'] = pd.to_datetime(df_toclean['last_review'])
 
     # Assuming that in production all names and hostnames are filled properly
     # set it to an empty string
-    df['name'].fillna("dummy", inplace=True)
-    df['host_name'].fillna("dummy", inplace=True)
+    df_toclean['name'].fillna("dummy", inplace=True)
+    df_toclean['host_name'].fillna("dummy", inplace=True)
     logger.info(
-        f"Removed missing values for columns name and host_name (NaN={df['name'].isnull().values.any()})")
+        f"Removed missing values for columns name and host_name (NaN={df_toclean['name'].isnull().values.any()})")
 
     # drop outliers of longitude and latitude
-    idx = df['longitude'].between(-74.25, -73.50) & df['latitude'].between(40.5, 41.2)
-    df = df[idx].copy()
-    
+    idx = df_toclean['longitude'].between(-74.25, -
+                                  73.50) & df_toclean['latitude'].between(40.5, 41.2)
+    df_toclean = df_toclean[idx].copy()
+
     # upload cleand data as an artifact to WB
     logger.info("Storing cleaned data")
-    df.to_csv(args.output_artifact, index=False)
-    logger.info(f"Stored Columns: {df.columns.values}")
+    df_toclean.to_csv(args.output_artifact, index=False)
+    logger.info(f"Stored Columns: {df_toclean.columns.values}")
 
     artifact = wandb.Artifact(
         name=args.output_artifact,
@@ -118,6 +123,6 @@ if __name__ == "__main__":
         required=True
     )
 
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
-    go(args)
+    go(arguments)

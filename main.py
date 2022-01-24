@@ -13,15 +13,13 @@ Date: 2022, Jan
 
 '''
 import json
-
-import mlflow
-import tempfile
 import os
-import wandb
+import tempfile
+import logging
+import mlflow
 import hydra
 from omegaconf import DictConfig
 
-import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
 logger = logging.getLogger()
 
@@ -29,19 +27,32 @@ logger = logging.getLogger()
 # This automatically reads in the configuration
 @hydra.main(config_name='config')
 def go(config: DictConfig):
+    '''
+    main workflow steps, by default it will run:
+    - download
+    - basic_cleaning
+    - data_check
+    - data_split
+    - train_random_forest
+    NOTE: test_regression_model is not included in the config.yaml in order not
+    to run it by mistake. You first need to promote a model export to "prod"
+    before you can run it, then you need to run this step explicitly.
+    - test_regression_model
 
+    '''
     # Setup the wandb experiment. All runs will be grouped under this name
     os.environ["WANDB_PROJECT"] = config["main"]["project_name"]
     os.environ["WANDB_RUN_GROUP"] = config["main"]["experiment_name"]
 
     # Steps to execute
-    # the steps defined in the config file can be overridden by passing the steps 
-    # when calling the module (e.g. python main.py main.steps=download) 
+    # the steps defined in the config file can be overridden by passing the steps
+    # as parameter (e.g. python main.py main.steps=download,basic_cleaning)
     active_steps = config['main']['steps']
     logger.info(f"Active steps in this ML pipeline: {active_steps}")
 
     # Move to a temporary directory
     with tempfile.TemporaryDirectory() as tmp_dir:
+        logger.info(f"Temporary Directory (rf_config): {tmp_dir}")
 
         if "download" in active_steps:
             # Download file and load in W&B
@@ -50,7 +61,7 @@ def go(config: DictConfig):
                 "main",
                 parameters={
                     "sample": config['etl']['sample'],
-                    "artifact_name": config['artifacts']['raw_data_artifact_name'],
+                    "artifact_name": config['main']['raw_data_artifact_name'],
                     "artifact_type": "raw_data",
                     "artifact_description": "Raw file as downloaded"
                 },
@@ -61,8 +72,8 @@ def go(config: DictConfig):
                 os.path.join(hydra.utils.get_original_cwd(), "src", "basic_cleaning"),
                 "main",
                 parameters={
-                    "input_artifact": f"{config['artifacts']['raw_data_artifact_name']}:latest",
-                    "output_artifact": config['artifacts']['cleaned_data_artifact_name'],
+                    "input_artifact": f"{config['main']['raw_data_artifact_name']}:latest",
+                    "output_artifact": config['main']['cleaned_data_artifact_name'],
                     "output_type": "cleaned_data",
                     "output_description": "Data with outliers and null values removed",
                     "min_price": config['etl']['min_price'],
@@ -75,8 +86,8 @@ def go(config: DictConfig):
                 os.path.join(hydra.utils.get_original_cwd(), "src", "data_check"),
                 "main",
                 parameters={
-                    "csv": f"{config['artifacts']['cleaned_data_artifact_name']}:latest",
-                    "ref": f"{config['artifacts']['cleaned_data_artifact_name']}:reference",
+                    "csv": f"{config['main']['cleaned_data_artifact_name']}:latest",
+                    "ref": f"{config['main']['cleaned_data_artifact_name']}:reference",
                     "kl_threshold": config['data_check']['kl_threshold'],
                     "min_price": config['etl']['min_price'],
                     "max_price": config['etl']['max_price']
@@ -88,7 +99,7 @@ def go(config: DictConfig):
                 f"{config['main']['components_repository']}/train_val_test_split",
                 "main",
                 parameters={
-                    "input": f"{config['artifacts']['cleaned_data_artifact_name']}:latest",
+                    "input": f"{config['main']['cleaned_data_artifact_name']}:latest",
                     "test_size": config['modeling']['test_size'],
                     "random_seed": config['modeling']['random_seed'],
                     "stratify_by": config['modeling']['stratify_by']
@@ -102,20 +113,20 @@ def go(config: DictConfig):
             with open(rf_config, "w+") as fp:
                 json.dump(dict(config["modeling"]["random_forest"].items()), fp)  # DO NOT TOUCH
 
-            # NOTE: use the rf_config we just created as the rf_config parameter for the train_random_forest
-            # step
+            # NOTE: use the rf_config we just created as the rf_config parameter for the
+            # train_random_forest step
 
             _ = mlflow.run(
                 os.path.join(hydra.utils.get_original_cwd(), "src", "train_random_forest"),
                 "main",
                 parameters={
-                    "trainval_artifact": f"{config['artifacts']['trainval_data_artifact_name']}:latest",
+                    "trainval_artifact": f"{config['main']['trainval_data_artifact_name']}:latest",
                     "val_size": config['modeling']['val_size'],
                     "random_seed": config['modeling']['random_seed'],
                     "stratify_by": config['modeling']['stratify_by'],
                     "rf_config": rf_config,
                     "max_tfidf_features": config['modeling']['max_tfidf_features'],
-                    "output_artifact": config['artifacts']['model_artifact_name']
+                    "output_artifact": config['main']['model_artifact_name']
                 }
             )
 
@@ -127,8 +138,8 @@ def go(config: DictConfig):
                 #f"{config['main']['components_repository']}/test_regression_model",
                 "main",
                 parameters={
-                    "mlflow_model": f"{config['artifacts']['model_artifact_name']}:prod",
-                    "test_dataset": f"{config['artifacts']['test_data_artifact_name']}:latest"
+                    "mlflow_model": f"{config['main']['model_artifact_name']}:prod",
+                    "test_dataset": f"{config['main']['test_data_artifact_name']}:latest"
                 }
             )
 

@@ -1,3 +1,17 @@
+# Comments:
+Please find here the link to my nyc_airbnb Weights&Biases workspace:
+https://wandb.ai/kangaroo98/nyc_airbnb?workspace=user-kangaroo98
+
+Please be aware that I have moved the "_steps"-list from main.py into the config.yaml. 
+If you want to run all steps just "mlflow run ." respectively use the steps parameter as 
+usual: "mlflow run . -P steps=...". 
+
+In addition I have experienced an issue in the test_regresion_model component. From my point of 
+view it is a bug since the signature of the model should be applied on the test data. Otherwise 
+this will result in an error as long as not the complete features are used to train the model.  
+This is fixed in my git repo version and therefore I didn't directly use this component.
+
+
 # Build an ML Pipeline for Short-Term Rental Prices in NYC
 You are working for a property management company renting rooms and properties for short periods of 
 time on various rental platforms. You need to estimate the typical price for a given property based 

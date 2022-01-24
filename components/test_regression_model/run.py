@@ -39,7 +39,7 @@ def go(args):
     sk_pipe = mlflow.sklearn.load_model(model_local_path)
     used_columns = list(itertools.chain.from_iterable([x[2] for x in sk_pipe['preprocessor'].transformers]))
     logger.info(f"Features loaded: {used_columns}")
-    logger.info(f"Another Version Features loaded: {sk_pipe['preprocessor'].transformers}")
+    logger.info(f"sk_pipe['preprocessor'].transformers: {sk_pipe['preprocessor'].transformers}")
     
     y_pred = sk_pipe.predict(X_test[used_columns])
 
